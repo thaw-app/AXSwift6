@@ -134,7 +134,7 @@ private func internalCallback(_ axObserver: AXObserver,
                               axElement: AXUIElement,
                               notification: CFString,
                               userData: UnsafeMutableRawPointer?) {
-    guard let userData = userData else { fatalError("userData should be an AXSwift.Observer") }
+    guard let userData = userData else { fatalError("userData should be an AXSwift6.Observer") }
 
     let observer = Unmanaged<Observer>.fromOpaque(userData).takeUnretainedValue()
     let element = UIElement(axElement)
@@ -150,7 +150,7 @@ private func internalInfoCallback(_ axObserver: AXObserver,
                                   notification: CFString,
                                   cfInfo: CFDictionary,
                                   userData: UnsafeMutableRawPointer?) {
-    guard let userData = userData else { fatalError("userData should be an AXSwift.Observer") }
+    guard let userData = userData else { fatalError("userData should be an AXSwift6.Observer") }
 
     let observer = Unmanaged<Observer>.fromOpaque(userData).takeUnretainedValue()
     let element = UIElement(axElement)

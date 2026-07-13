@@ -1,5 +1,5 @@
 import Cocoa
-import AXSwift
+import AXSwift6
 
 class ApplicationDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ aNotification: Notification) {

@@ -1,5 +1,5 @@
 import Cocoa
-import AXSwift
+import AXSwift6
 
 class AppDelegate: NSObject, NSApplicationDelegate {
 

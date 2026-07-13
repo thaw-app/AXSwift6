@@ -1,10 +1,10 @@
 import Foundation
 import Cocoa
 
-extension AXError: Swift.Error {}
+extension AXError: @retroactive Error {}
 
 // For some reason values don't get described in this enum, so we have to do it manually.
-extension AXError: CustomStringConvertible {
+extension AXError: @retroactive CustomStringConvertible {
     fileprivate var valueAsString: String {
         switch self {
         case .success:
