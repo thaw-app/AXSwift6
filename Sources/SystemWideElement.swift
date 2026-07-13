@@ -6,13 +6,10 @@ public let systemWideElement = SystemWideElement()
 
 /// A `UIElement` for the system-wide accessibility element, which can be used to retrieve global,
 /// application-inspecific parameters like the currently focused element.
-open class SystemWideElement: UIElement {
-    fileprivate convenience init() {
-        self.init(AXUIElementCreateSystemWide())
-    }
+public typealias SystemWideElement = UIElement
 
-    /// Returns the element at the specified top-down coordinates, or nil if there is none.
-    open override func elementAtPosition(_ x: Float, _ y: Float) throws -> UIElement? {
-        return try super.elementAtPosition(x, y)
+private extension UIElement {
+    convenience init() {
+        self.init(AXUIElementCreateSystemWide())
     }
 }

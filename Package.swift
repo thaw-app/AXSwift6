@@ -1,11 +1,11 @@
-// swift-tools-version:6.4
+// swift-tools-version:6.0
 
 import PackageDescription
 
 let package = Package(
     name: "AXSwift6",
     platforms: [
-        .macOS(.v27),
+        .macOS("26.0"),
     ],
     products: [
         .library(
@@ -18,6 +18,10 @@ let package = Package(
             name: "AXSwift6",
             path: "Sources"
         ),
+        .testTarget(
+            name: "AXSwift6Tests",
+            dependencies: ["AXSwift6"]
+        ),
     ],
-    swiftLanguageModes: [.v5]
+    swiftLanguageModes: [.v6]
 )
