@@ -1,44 +1,41 @@
-# AXSwift
+# AXSwift6
 
-[![Version](https://cocoapod-badges.herokuapp.com/v/AXSwift/badge.svg)](https://cocoapods.org/pods/AXSwift)
-[![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-4BC51D.svg?style=flat)](https://github.com/Carthage/Carthage)
+Fork of [stonerl/AXSwift](https://github.com/stonerl/AXSwift) for [Thaw](https://github.com/thaw-app) on macOS 27.
 
-AXSwift is a Swift wrapper for macOS's C-based accessibility client APIs. Working with these APIs is
-error-prone and a huge pain, so AXSwift makes everything easier:
+Thaw on macOS 26 continues to use the original `AXSwift` module; this package publishes a separate `AXSwift6` module so both can coexist.
+
+AXSwift is a Swift wrapper for macOS's C-based accessibility client APIs. Working with these APIs is error-prone and a huge pain, so AXSwift makes everything easier:
 
 - Modern API that's 100% Swift
 - Explicit error handling
 - Complete coverage of the underlying C API
 - Better documentation than Apple's, which is pretty poor
 
-This framework is intended as a basic wrapper, and doesn't keep any state or do any "magic".
-That's up to you!
+This framework is intended as a basic wrapper, and doesn't keep any state or do any "magic". That's up to you!
 
-## Using AXSwift
+## Requirements
 
-### SPM
-In your Package.swift:
-```
-.package(url: "https://github.com/tmandry/AXSwift", from: "0.3.0"),
-```
+- macOS 27+
+- Swift 6.4 toolchain (package uses Swift 5 language mode)
 
-### Carthage
-In your Cartfile:
-```
-github "tmandry/AXSwift" ~> 0.3
+## Using AXSwift6
+
+In your `Package.swift`:
+
+```swift
+.package(url: "https://github.com/thaw-app/AXSwift6.git", from: "0.3.2"),
 ```
 
-### CocoaPods
-In your Podfile:
+Then add the product to your target:
+
+```swift
+.product(name: "AXSwift6", package: "AXSwift6"),
 ```
-pod 'AXSwift', '~> 0.3'
+
+```swift
+import AXSwift6
 ```
 
-See the source of [AXSwiftExample](https://github.com/tmandry/AXSwift/blob/master/AXSwiftExample/AppDelegate.swift)
-and [AXSwiftObserverExample](https://github.com/tmandry/AXSwift/blob/master/AXSwiftObserverExample/AppDelegate.swift)
-for an example of the API.
+## Examples
 
-## Related Projects
-
-[Swindler](https://github.com/tmandry/Swindler), a framework for building macOS window managers in Swift,
-is built on top of AXSwift.
+Sample usage lives in [AXSwiftExample](AXSwiftExample/AppDelegate.swift) and [AXSwiftObserverExample](AXSwiftObserverExample/AppDelegate.swift) (not package targets).
