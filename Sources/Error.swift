@@ -1,7 +1,7 @@
 import Foundation
 import Cocoa
 
-extension AXError: @retroactive Error {}
+extension AXError: @retroactive _BridgedNSError, @retroactive _ObjectiveCBridgeableError {}
 
 // For some reason values don't get described in this enum, so we have to do it manually.
 extension AXError: @retroactive CustomStringConvertible {
