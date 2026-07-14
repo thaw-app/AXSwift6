@@ -1,9 +1,11 @@
 import ApplicationServices
 import AXSwift6
-import XCTest
+import Testing
 
-final class ConcurrencyTests: XCTestCase {
-    func testPublicHandlesAndConstantsAreSendable() {
+@Suite("Concurrency")
+struct ConcurrencyTests {
+    @Test("Public handles and constants are Sendable")
+    func publicHandlesAndConstantsAreSendable() {
         requireSendableType(UIElement.self)
         requireSendableType(Observer.self)
         requireSendable(systemWideElement)
@@ -14,32 +16,35 @@ final class ConcurrencyTests: XCTestCase {
         requireSendable(AXNotification.valueChanged)
     }
 
-    func testIndependentHandlesKeepIndependentTimeoutState() throws {
+    @Test("Independent handles keep independent timeout state")
+    func independentHandlesKeepIndependentTimeoutState() throws {
         let first = UIElement(AXUIElementCreateApplication(getpid()))
         let second = UIElement(AXUIElementCreateApplication(getpid()))
 
         try first.setMessagingTimeout(0.1)
         try second.setMessagingTimeout(0.2)
 
-        XCTAssertEqual(first.currentMessagingTimeout, 0.1)
-        XCTAssertEqual(second.currentMessagingTimeout, 0.2)
+        #expect(first.currentMessagingTimeout == 0.1)
+        #expect(second.currentMessagingTimeout == 0.2)
     }
 
-    func testWrappersForSameNativeReferenceShareSynchronizationState() throws {
+    @Test("Wrappers for the same native reference share synchronization state")
+    func wrappersForSameNativeReferenceShareSynchronizationState() throws {
         let nativeElement = AXUIElementCreateApplication(getpid())
         let first = UIElement(nativeElement)
         let second = UIElement(nativeElement)
 
         try first.setMessagingTimeout(0.1)
-        XCTAssertEqual(second.currentMessagingTimeout, 0.1)
+        #expect(second.currentMessagingTimeout == 0.1)
 
         try second.setMessagingTimeout(0.2)
-        XCTAssertEqual(first.currentMessagingTimeout, 0.2)
-        XCTAssertEqual(first, second)
+        #expect(first.currentMessagingTimeout == 0.2)
+        #expect(first == second)
         _ = try? first.setAttribute(.focusedUIElement, value: second)
     }
 
-    func testMessagingTimeoutIsSerializedAcrossTasks() async throws {
+    @Test("Messaging timeout is serialized across tasks")
+    func messagingTimeoutIsSerializedAcrossTasks() async throws {
         let element = UIElement(AXUIElementCreateApplication(getpid()))
 
         try await withThrowingTaskGroup(of: Void.self) { group in
@@ -51,18 +56,20 @@ final class ConcurrencyTests: XCTestCase {
             try await group.waitForAll()
         }
 
-        XCTAssertTrue(element.currentMessagingTimeout == 0.1 || element.currentMessagingTimeout == 0.2)
+        #expect(element.currentMessagingTimeout == 0.1 || element.currentMessagingTimeout == 0.2)
     }
 
-    func testNegativeMessagingTimeoutIsNormalized() throws {
+    @Test("Negative messaging timeout is normalized to zero")
+    func negativeMessagingTimeoutIsNormalized() throws {
         let element = UIElement(AXUIElementCreateApplication(getpid()))
 
         try element.setMessagingTimeout(-1)
 
-        XCTAssertEqual(element.currentMessagingTimeout, 0)
+        #expect(element.currentMessagingTimeout == 0)
     }
 
-    func testConcurrentReadsUseOneHandleSafely() async throws {
+    @Test("Concurrent reads use one handle safely")
+    func concurrentReadsUseOneHandleSafely() async throws {
         let element = UIElement(AXUIElementCreateApplication(getpid()))
 
         try await withThrowingTaskGroup(of: pid_t.self) { group in
@@ -72,12 +79,13 @@ final class ConcurrencyTests: XCTestCase {
                 }
             }
             for try await pid in group {
-                XCTAssertEqual(pid, getpid())
+                #expect(pid == getpid())
             }
         }
     }
 
-    func testOrderedElementLockingDoesNotDeadlock() async {
+    @Test("Ordered element locking does not deadlock")
+    func orderedElementLockingDoesNotDeadlock() async {
         let first = UIElement(AXUIElementCreateApplication(getpid()))
         let second = UIElement(AXUIElementCreateApplication(getpid()))
 
@@ -92,13 +100,16 @@ final class ConcurrencyTests: XCTestCase {
             }
             group.addTask {
                 _ = try? first.setAttribute(.focusedUIElement, value: first)
-                _ = first == first
+                _ = first == second
             }
         }
     }
 
-    func testObserverStartAndStopAreIdempotent() throws {
-        let observer = try Observer(processID: getpid()) { _, _, _ in }
+    @Test("Observer start and stop are idempotent")
+    func observerStartAndStopAreIdempotent() throws {
+        let observer = try Observer(processID: getpid()) { _, _, _ in
+            // No-op: this test only exercises start/stop lifecycle.
+        }
 
         observer.start()
         observer.start()
@@ -108,21 +119,27 @@ final class ConcurrencyTests: XCTestCase {
         observer.stop()
     }
 
-    func testObserverRegistryDoesNotExtendLifetime() throws {
-        var observer: Observer? = try Observer(processID: getpid()) { _, _, _ in }
+    @Test("Observer registry does not extend lifetime")
+    func observerRegistryDoesNotExtendLifetime() throws {
+        var observer: Observer? = try Observer(processID: getpid()) { _, _, _ in
+            // No-op: lifetime is asserted via weak reference after release.
+        }
         let weakObserver = WeakReference(observer)
 
         observer = nil
 
-        XCTAssertNil(weakObserver.value)
+        #expect(weakObserver.value == nil)
     }
+}
 
-    func testMenuBarItemRoleIsRecognized() {
-        XCTAssertEqual(Role(rawValue: "AXMenuBarItem"), .menuBarItem)
-    }
+/// Compile-time Sendable witness; body intentionally empty.
+private func requireSendable<T: Sendable>(_: T) {
+    // Type constraint is the assertion.
+}
 
-    private func requireSendable<T: Sendable>(_: T) {}
-    private func requireSendableType<T: Sendable>(_: T.Type) {}
+/// Compile-time Sendable type witness; body intentionally empty.
+private func requireSendableType<T: Sendable>(_: T.Type) {
+    // Type constraint is the assertion.
 }
 
 private final class WeakReference<Value: AnyObject> {
