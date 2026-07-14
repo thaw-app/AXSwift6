@@ -35,9 +35,11 @@ struct UIElementTests {
         #expect(!TestFixtures.currentApplication().inspect.isEmpty)
     }
 
-    @Test("systemWideElement equals itself")
-    func systemWideElementEqualsItself() {
-        #expect(systemWideElement == systemWideElement)
+    @Test("Distinct system-wide handles are equal")
+    func distinctSystemWideHandlesAreEqual() {
+        let first = systemWideElement
+        let second = UIElement(AXUIElementCreateSystemWide())
+        #expect(first == second)
     }
 
     @Test("systemWideElement messaging timeout can be set")
