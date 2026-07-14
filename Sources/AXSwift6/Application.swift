@@ -81,6 +81,4 @@ public extension UIElement {
         let windows: [AXUIElement]? = try attribute("AXWindows")
         return windows?.map(UIElement.init)
     }
-
-    /// Returns the element at the specified top-down coordinates, or nil if there is none.
 }

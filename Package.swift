@@ -15,8 +15,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "AXSwift6",
-            path: "Sources"
+            name: "AXSwift6"
         ),
         .testTarget(
             name: "AXSwift6Tests",
