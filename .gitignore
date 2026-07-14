@@ -1,6 +1,8 @@
 # Swift Package Manager
 .build/
 .swiftpm/
+*.profraw
+default.profraw
 
 # Xcode
 DerivedData/
@@ -8,3 +10,6 @@ xcuserdata/
 
 # macOS
 .DS_Store
+
+# VSCode
+.vscode/
