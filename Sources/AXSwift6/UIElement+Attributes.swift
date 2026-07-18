@@ -10,7 +10,7 @@ extension UIElement {
 public func attributes() throws -> [Attribute] {
     let attrs = try attributesAsStrings()
     for attr in attrs where Attribute(rawValue: attr) == nil {
-        print("Unrecognized attribute: \(attr)")
+        axLog.debug("Unrecognized attribute: \(attr, privacy: .public)")
     }
     return attrs.compactMap({ Attribute(rawValue: $0) })
 }

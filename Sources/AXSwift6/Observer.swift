@@ -255,7 +255,7 @@ private func internalCallback(_ axObserver: AXObserver,
     guard let observer = ObserverRegistry.observer(for: axObserver) else { return }
     let element = UIElement(axElement)
     guard let notif = AXNotification(rawValue: notification as String) else {
-        NSLog("Unknown AX notification %s received", notification as String)
+        axLog.error("Unknown AX notification received: \(notification as String, privacy: .public)")
         return
     }
     observer.deliver(element, notification: notif)
@@ -270,7 +270,7 @@ private func internalInfoCallback(_ axObserver: AXObserver,
     let element = UIElement(axElement)
     let info = cfInfo as NSDictionary? as? [String: AnyObject]
     guard let notif = AXNotification(rawValue: notification as String) else {
-        NSLog("Unknown AX notification %s received", notification as String)
+        axLog.error("Unknown AX notification received: \(notification as String, privacy: .public)")
         return
     }
     observer.deliver(element, notification: notif, info: info)
