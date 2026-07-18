@@ -59,7 +59,8 @@ public extension UIElement {
         } catch AXError.invalidUIElement {
             return nil
         } catch let error {
-            fatalError("Caught unexpected error creating observer: \(error)")
+            axLog.error("Unexpected error creating observer: \(String(describing: error), privacy: .public)")
+            return nil
         }
     }
 
@@ -70,7 +71,8 @@ public extension UIElement {
         } catch AXError.invalidUIElement {
             return nil
         } catch let error {
-            fatalError("Caught unexpected error creating observer: \(error)")
+            axLog.error("Unexpected error creating observer: \(String(describing: error), privacy: .public)")
+            return nil
         }
     }
 
