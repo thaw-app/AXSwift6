@@ -11,7 +11,8 @@ import os
 /// Note that every operation involves IPC and is tied to the event loop of the target process. This
 /// means that operations are synchronous and can hang until they time out. The default timeout is
 /// 6 seconds, but it can be changed using `setMessagingTimeout(_:)` or the deprecated
-/// `globalMessagingTimeout` property.
+/// `globalMessagingTimeout` property. Those apply to a single native handle; to bound every
+/// element the library creates, set `UIElement.defaultMessagingTimeout` once at startup.
 ///
 /// Every attribute- or action-related function has an enum version and a String version. This is
 /// because certain processes might report attributes or actions not documented in the standard API.
@@ -86,6 +87,36 @@ public final class UIElement: Sendable {
 
     private let storage: Storage
 
+    private static let defaultMessagingTimeoutStorage = OSAllocatedUnfairLock<Float>(
+        initialState: 0
+    )
+
+    /// The messaging timeout, in seconds, applied to each element as it is created.
+    ///
+    /// Every accessibility operation is synchronous IPC tied to the event loop of the
+    /// target process, so a wedged or busy target blocks the caller until the message
+    /// times out. The system default is 6 seconds, which is far longer than a
+    /// user-facing operation can afford to wait.
+    ///
+    /// Setting a per-element timeout is the only way to bound that wait, but
+    /// ``setMessagingTimeout(_:)`` applies to a single native handle — it does not
+    /// propagate to elements obtained later from that one, because each is a distinct
+    /// native reference. Setting this property instead applies the timeout at
+    /// ``init(_:)``, which every element funnels through, including children returned
+    /// by attribute lookups.
+    ///
+    /// The default is `0`, meaning the system default is used and behavior is
+    /// unchanged. Set this once, before creating elements, to opt in.
+    ///
+    /// - note: Only newly created elements are affected. An element whose native
+    ///         reference is already known reuses its existing storage and keeps the
+    ///         timeout it already has, so changing this value does not retroactively
+    ///         retime live elements.
+    public static var defaultMessagingTimeout: Float {
+        get { defaultMessagingTimeoutStorage.withLock { $0 } }
+        set { defaultMessagingTimeoutStorage.withLock { $0 = max(newValue, 0) } }
+    }
+
     /// Create a UIElement from a raw AXUIElement object.
     ///
     /// The state and role of the AXUIElement is not checked.
@@ -94,19 +125,35 @@ public final class UIElement: Sendable {
         assert(CFGetTypeID(nativeElement) == AXUIElementGetTypeID(),
                "nativeElement is not an AXUIElement")
 
+        // Read before taking the registry lock: never hold two locks at once.
+        let defaultTimeout = Self.defaultMessagingTimeout
+
         let key = ObjectIdentifier(nativeElement)
         let candidate = Storage(element: nativeElement)
-        storage = Self.storageRegistry.withLock { registry in
-            if let storage = registry.entries[key]?.value {
-                return storage
+        let (resolvedStorage, isNewStorage) = Self.storageRegistry
+            .withLock { registry -> (Storage, Bool) in
+                if let storage = registry.entries[key]?.value {
+                    return (storage, false)
+                }
+                registry.entries[key] = WeakStorage(candidate)
+                registry.insertionsSinceCleanup += 1
+                if registry.insertionsSinceCleanup >= 256 {
+                    registry.entries = registry.entries.filter { $0.value.value != nil }
+                    registry.insertionsSinceCleanup = 0
+                }
+                return (candidate, true)
             }
-            registry.entries[key] = WeakStorage(candidate)
-            registry.insertionsSinceCleanup += 1
-            if registry.insertionsSinceCleanup >= 256 {
-                registry.entries = registry.entries.filter { $0.value.value != nil }
-                registry.insertionsSinceCleanup = 0
-            }
-            return candidate
+        storage = resolvedStorage
+
+        // Reused storage already carries its own timeout; only seed fresh storage.
+        guard isNewStorage, defaultTimeout > 0 else { return }
+        do {
+            try setMessagingTimeout(defaultTimeout)
+        } catch AXError.invalidUIElement {
+            // The element was already dead. This only matters once a message is
+            // actually sent to it, which will report the failure to that caller.
+        } catch {
+            axLog.debug("Could not apply default messaging timeout: \(error, privacy: .public)")
         }
     }
 
