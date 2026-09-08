@@ -187,6 +187,64 @@ public func getMultipleAttributes(_ attributes: [String]) throws -> [String: Any
     return try packMultiAttrValues(attributes, values: values)
 }
 
+/// Reads several attributes in one message, keeping whatever answered.
+///
+/// ``getMultipleAttributes(_:)-(``[Attribute]``)`` throws the first error it
+/// meets that is not `.noValue` or `.attributeUnsupported`, which discards the
+/// attributes that did answer along with the one that did not. A caller
+/// assembling a best-effort snapshot wants the opposite: one bad attribute
+/// should cost that attribute and nothing else.
+///
+/// The saving is the round trip rather than the parsing. Every attribute read
+/// is a synchronous message to the owning process, answered on that process's
+/// main thread, so reading four attributes one at a time is four chances to
+/// wait on an app that is busy, and four messaging timeouts to burn against an
+/// app that is wedged. This is one of each.
+///
+/// - parameter attributes: The attributes to read. Order does not matter.
+/// - returns: The attributes that answered. An attribute that is absent,
+///            unsupported, or errored is missing from the dictionary, and a
+///            failure of the read itself yields an empty one.
+public func attributeValues(_ attributes: [Attribute]) -> [Attribute: Any] {
+    guard let values = try? fetchMultiAttrValues(attributes.map(\.rawValue)),
+          values.count == attributes.count
+    else {
+        return [:]
+    }
+    return packAttributeValues(attributes, values: values)
+}
+
+/// The packing half of ``attributeValues(_:)``, split from the message so the
+/// mapping can be exercised without an accessibility-trusted process.
+func packAttributeValues(_ attributes: [Attribute], values: [AnyObject]) -> [Attribute: Any] {
+    var result = [Attribute: Any]()
+    for (index, attribute) in attributes.enumerated() where index < values.count {
+        // Absent reads false and an error throws, and neither belongs in the
+        // result, so the same test covers both.
+        guard (try? checkMultiAttrValue(values[index])) == true else {
+            continue
+        }
+        result[attribute] = unpackAXValueOrArray(values[index])
+    }
+    return result
+}
+
+/// ``unpackAXValue(_:)`` for a value that may be an array.
+///
+/// `unpackAXValue` switches on the value's own type ID, so an array of
+/// `AXUIElement` falls through untouched and the caller receives raw Core
+/// Foundation references where the single-attribute readers hand back
+/// ``UIElement``. `arrayAttribute` avoids that by mapping the elements itself.
+/// A batched read has to do the same, or `AXChildren` would answer with one
+/// type here and another there, and a cast written against the single reader
+/// would quietly fail rather than fail to compile.
+func unpackAXValueOrArray(_ value: AnyObject) -> Any {
+    guard let array = value as? [AnyObject] else {
+        return unpackAXValue(value)
+    }
+    return array.map { unpackAXValue($0) }
+}
+
 // Helper: Gets list of values
 func fetchMultiAttrValues(_ attributes: [String]) throws -> [AnyObject] {
     var valuesCF: CFArray?
