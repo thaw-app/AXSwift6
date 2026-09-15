@@ -262,7 +262,16 @@ func fetchMultiAttrValues(_ attributes: [String]) throws -> [AnyObject] {
         throw error
     }
 
-    return valuesCF! as [AnyObject]
+    // Written synchronously before Foundation touches the returned object;
+    // an Objective-C exception cannot be caught by the caller's Swift try?.
+    let diagnostic = AXBatchDiagnostics.handler == nil ? nil : AXBatchDiagnostics.begin(
+        pid: (try? pid()) ?? -1, attributes: attributes, result: valuesCF
+    )
+    let values = valuesCF! as [AnyObject]
+    if let diagnostic {
+        diagnostic.handler("AXBatchBridge id=\(diagnostic.id) phase=after count=\(values.count)")
+    }
+    return values
 }
 
 // Helper: Packs names, values into dictionary
