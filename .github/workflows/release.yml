@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   release:
+    if: github.repository == 'thaw-app/AXSwift6'
     runs-on: macos-26
     steps:
       - name: Checkout
