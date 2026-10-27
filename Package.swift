@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "AXSwift6",
     platforms: [
-        .macOS("26.0"),
+        .macOS(.v15),
     ],
     products: [
         .library(

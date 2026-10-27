@@ -1,6 +1,6 @@
 # AXSwift6
 
-Swift 6 accessibility client API for macOS 26+.
+Swift 6 accessibility client API for macOS 15+.
 
 Fork of [stonerl/AXSwift](https://github.com/stonerl/AXSwift) for [Thaw](https://github.com/thaw-app). Wraps Apple’s C `AXUIElement` APIs with a typed Swift surface, explicit errors, and `Sendable` handles that serialize access to the underlying unannotated Core Foundation references.
 
@@ -8,7 +8,7 @@ This package is a thin wrapper — not an accessibility object model. It transla
 
 ## Requirements
 
-- macOS 26+
+- macOS 15+
 - Swift 6 toolchain
 
 ## Architecture
